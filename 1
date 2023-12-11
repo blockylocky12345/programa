@@ -1,0 +1,696 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <conio.h>
+
+char serviciosSeleccionados[4] = {' ', ' ', ' ', ' '};
+int horarioNormal = 1; // Variable para indicar si se encuentra dentro del horario normal
+char largoPelo[100];
+void historialDeServicios();
+void mostrarDetalleOrden(const char *nombreMascota, const char *altura, const char *largoPelo, float costoNormal, float descuento, float precioFinal);
+void pantallaInicial();
+void nuevoRegistro();
+void preciosDeServicios();
+void mostrarPreciosDesdeArchivo(const char *nombreArchivo);
+float obtenerPorcentajeDescuento(int serviciosRealizados);
+void ingresoAlSistema();
+void usuariocliente();
+void registroDeMascota();
+void solicitudDeServicio();
+float calcularCostoTotal();
+void detalleDelServicio(const char *nombreMascota, const char serviciosSeleccionados[4], float descuento, float costoTotal, float precioFinal);
+void aplicarDescuento(float *costoTotal);
+void mensajeConfirmacion(void);
+float obtenerPorcentajeDesdeArchivo(const char *nombreArchivo);
+
+// Declaraciones globales
+char nombreMascota[100];  // Ajusta el tamaño según sea necesario
+char altura[20];
+float costoTotal;  // Ajusta el tipo de dato según sea necesario
+float descuento;
+
+float precioFinal;
+
+int autenticarUsuario(char nickname[], char password[]);
+struct Usuario 
+{
+    char nombre[100];
+    int edad;
+    char nickname[100];
+    char password[100];
+    char correo[100];
+    char numero[15];
+    char direccion[50];
+};
+struct HistorialServicio
+{
+    char nombreMascota[100];
+    char servicios[4][20];  // Cambio en la declaración
+    float descuento;
+    float precioTotalOrden;
+    float precioFinal;
+};
+
+int main()
+{
+    float costoTotal = 0.0;
+    float descuento = 0.0;
+    float precioFinal = 0.0;
+    serviciosSeleccionados[0] = ' ';
+    serviciosSeleccionados[1] = ' ';
+    serviciosSeleccionados[2] = ' ';
+    serviciosSeleccionados[3] = ' ';
+    // Precios de baño para perros
+    FILE *preciosBanoPerros = fopen("precios_bano_perros.txt", "w");
+    fprintf(preciosBanoPerros, "Talla Precio_base Sin_pelo Pelo_corto Pelo_medio Pelo_largo\n");
+    fprintf(preciosBanoPerros, "Miniatura 80.00 30.00 20.00 30.00 40.00\n");
+    fprintf(preciosBanoPerros, "Pequeño 130.00 30.00 20.00 30.00 40.00\n");
+    fprintf(preciosBanoPerros, "Mediano 180.00 40.00 30.00 40.00 60.00\n");
+    fprintf(preciosBanoPerros, "Grande 230.00 40.00 30.00 40.00 60.00\n");
+    fprintf(preciosBanoPerros, "Gigante 280.00 60.00 50.00 60.00 80.00\n");
+    fclose(preciosBanoPerros);
+
+    // Precios de corte de pelo para perros
+    FILE *preciosCortePeloPerros = fopen("precios_corte_pelo_perros.txt", "w");
+    fprintf(preciosCortePeloPerros, "Talla Sin_pelo Pelo_corto Pelo_medio Pelo_largo\n");
+    fprintf(preciosCortePeloPerros, "Miniatura 0.00 40.00 50.00 60.00\n");
+    fprintf(preciosCortePeloPerros, "Pequeño 0.00 50.00 60.00 70.00\n");
+    fprintf(preciosCortePeloPerros, "Mediano 0.00 60.00 70.00 80.00\n");
+    fprintf(preciosCortePeloPerros, "Grande 0.00 70.00 80.00 90.00\n");
+    fprintf(preciosCortePeloPerros, "Gigante 0.00 80.00 90.00 100.00\n");
+    fclose(preciosCortePeloPerros);
+
+    // Precios de corte de uñas para perros
+    FILE *preciosCorteUnasPerros = fopen("precios_corte_unas_perros.txt", "w");
+    fprintf(preciosCorteUnasPerros, "Talla Corte_unas_perros\n");
+    fprintf(preciosCorteUnasPerros, "Miniatura 30.00\n");
+    fprintf(preciosCorteUnasPerros, "Pequeño 30.00\n");
+    fprintf(preciosCorteUnasPerros, "Mediano 45.00\n");
+    fprintf(preciosCorteUnasPerros, "Grande 45.00\n");
+    fprintf(preciosCorteUnasPerros, "Gigante 60.00\n");
+    fclose(preciosCorteUnasPerros);
+
+    // Precios de cepillado dental para perros
+    FILE *preciosCepilladoDentalPerros = fopen("precios_cepillado_dental_perros.txt", "w");
+    fprintf(preciosCepilladoDentalPerros, "Talla Cepillado_dental_perros\n");
+    fprintf(preciosCepilladoDentalPerros, "Miniatura 25.00\n");
+    fprintf(preciosCepilladoDentalPerros, "Pequeño 25.00\n");
+    fprintf(preciosCepilladoDentalPerros, "Mediano 40.00\n");
+    fprintf(preciosCepilladoDentalPerros, "Grande 40.00\n");
+    fprintf(preciosCepilladoDentalPerros, "Gigante 55.00\n");
+    fclose(preciosCepilladoDentalPerros);
+
+    // Precios de baño para gatos
+    FILE *preciosBanoGatos = fopen("precios_bano_gatos.txt", "w");
+    fprintf(preciosBanoGatos, "Talla Precio_base Sin_pelo Pelo_corto Pelo_largo\n");
+    fprintf(preciosBanoGatos, "Gato 150.00 30.00 20.00 40.00\n");
+    fclose(preciosBanoGatos);
+
+    // Precios de corte de uñas para gatos
+    FILE *preciosCorteUnasGatos = fopen("precios_corte_unas_gatos.txt", "w");
+    fprintf(preciosCorteUnasGatos, "Talla Corte_unas_gatos\n");
+    fprintf(preciosCorteUnasGatos, "Gato 30.00\n");
+    fclose(preciosCorteUnasGatos);
+
+    // Precios de cepillado dental para gatos
+    FILE *preciosCepilladoDentalGatos = fopen("precios_cepillado_dental_gatos.txt", "w");
+    fprintf(preciosCepilladoDentalGatos, "Talla Cepillado_dental_gatos\n");
+    fprintf(preciosCepilladoDentalGatos, "Gato 25.00\n");
+    fclose(preciosCepilladoDentalGatos);
+
+
+    pantallaInicial();
+    return 0;
+}
+
+void pantallaInicial() 
+{
+    int decisionInicial;
+    printf("1. Nuevo registro\n2. Ingreso al sistema\n");
+    scanf("%i", &decisionInicial);
+
+    switch (decisionInicial) {
+        case 1:
+            nuevoRegistro();
+            break;
+        case 2:
+            ingresoAlSistema();
+            break;
+    }
+}
+
+void nuevoRegistro() 
+{
+
+     char nombre1[100];
+        int edad;
+        char nickname[100];
+        char password[100];
+        char password2[100];
+        char correo[100];
+        char numero[15];
+        char direccion[50];
+        char correctos[3];
+        do
+        {
+        do
+        {
+            printf("Nombre apellido paterno y apellido materno\n");
+            scanf(" %[^\n]", nombre1);
+            printf("edad\n");
+            scanf("%i", &edad);
+            printf("Nickname\n");
+            scanf("%s", nickname);
+            printf("password\n");
+            scanf("%s", password);
+            printf("password nuevamente\n");
+            scanf("%s", password2);
+            printf("correo electronico\n");
+            scanf("%s", correo);
+            printf("numero de celular\n");
+            scanf("%s", numero);
+            printf("direccion\n");
+            scanf(" %[^\n]", direccion);
+
+            printf("%s %i %s %s %s %s %s %s \n", nombre1, edad, nickname, password, password2, correo, numero, direccion);
+            printf("¿Los datos son correctos?\n");
+            scanf("%s", correctos);
+            setbuf(stdin, NULL);
+            if(strcmp(password, password2)!=0)
+            {
+                printf("las passwords no son iguales, intentalo de nuevo \n");
+            }
+        }
+        while (strcmp(password, password2) != 0);
+        }
+        while (strcmp(correctos,"no")==0);
+    FILE *archivo;
+        archivo = fopen("usuarios.txt", "a"); 
+        if (archivo == NULL)
+        {
+            printf("Error al abrir el archivo.\n");
+            exit(1);
+        }
+
+        fprintf(archivo, "%s %i %s %s %s %s %s \n", nombre1, edad, nickname, password, correo, numero, direccion);
+
+        fclose(archivo);
+
+        printf("Registrando al nuevo usuario...\n");
+        sleep(5);
+
+        pantallaInicial();
+}
+
+
+void ingresoAlSistema()
+{
+    char nickname[100];
+    char password[100];
+    int resultado;  
+
+    do
+    {
+        printf("Ingrese su nickname:\n");
+scanf(" %99[^\n]", nickname);
+printf("Ingrese su contraseña:\n");
+scanf(" %99[^\n]", password);
+        resultado = autenticarUsuario(nickname, password);
+
+        if (resultado != -1) {
+            printf("¡Bienvenido, %s!\n", nickname);
+            usuariocliente();
+        } else 
+        {
+            printf("Error: Usuario o contraseña incorrectos.\n");
+        }
+    }
+    while(resultado == -1);
+}
+
+int autenticarUsuario(char nickname[], char password[]) 
+{
+    FILE *archivo = fopen("usuarios.txt", "r");
+    if (archivo == NULL) 
+    {
+        printf("Error al abrir el archivo de usuarios.\n");
+        exit(1);
+    }
+
+    struct Usuario usuario;
+    int id = 0;
+
+    while (fscanf(archivo, "%s %i %s %s %s %s %s", usuario.nombre, &usuario.edad, usuario.nickname,
+                  usuario.password, usuario.correo, usuario.numero, usuario.direccion) != EOF) 
+                  {
+        if (strcmp(usuario.nickname, nickname) == 0 && strcmp(usuario.password, password) == 0) 
+        {
+            fclose(archivo);
+            return id; 
+        }
+        id++;
+    }
+
+    fclose(archivo);
+    return -1; 
+}
+void usuariocliente()
+{
+    int seleccion1;
+    printf("1. registrar una mascota \n");
+    printf("2. reeservar un servicio especial o combo para mascota \n");
+    printf("3. ver historial de servicios adquiridos \n");
+    printf("4. Ver precios de servicios \n");
+    printf("5. salir de sesion \n");
+    scanf("%i", &seleccion1);
+    if(seleccion1==1)
+    {
+    registroDeMascota();
+    }
+    if(seleccion1==2)
+    {
+        solicitudDeServicio();
+    }
+    if(seleccion1==3)
+    {
+        historialDeServicios();
+    }
+    if(seleccion1==4)
+    {
+        preciosDeServicios();
+    }
+    if(seleccion1==5)
+    {
+       pantallaInicial(); 
+    }
+}
+
+void registroDeMascota()
+{
+    FILE *mascotas;
+    mascotas = fopen("mascotas.txt", "a");
+    if (mascotas == NULL)
+    {
+        printf("Error al abrir el archivo.\n");
+        exit(1);
+    }
+
+    char mascota[10];
+    printf("¿Quiere registrar un perro o un gato? \n");
+    scanf("%s", mascota);
+
+    if (strcmp(mascota, "perro") == 0)
+    {
+        char nombrePerro[100];
+        int edadPerro;
+        char tamanoPerro[20];
+        char peloPerro[100]; 
+        int opcionPeloPerro;
+
+        printf("Nombre del perro: \n");
+        scanf("%s", nombrePerro);
+
+        printf("Edad del perro en años: \n");
+        scanf("%i", &edadPerro);
+
+        printf("Elige una de las siguientes opciones: \n");
+        printf("Miniatura - 25cm o menos \n");
+        printf("Pequeño - 25 a 40 cm \n");
+        printf("Mediano - 40 a 60 cm \n");
+        printf("Grande - 60 a 80 cm \n");
+        printf("Gigante – Más de 80 cm \n");
+        scanf("%s", tamanoPerro);
+
+        printf("Elige un tipo de pelo para tu perro:\n");
+        printf("1: Sin pelo (Ej. Xoloitzcuintle, Terrier americano)\n");
+        printf("2: Pelo corto (Ej. Dóberman, Pit bull, Bulldog, Beagle)\n");
+        printf("3: Pelo medio (Ej. Maltés, Husky, Pastor alemán, Border collie)\n");
+        printf("4: Pelo largo (Ej. Collie de pelo largo (Lassie), Galgo albano, Yorkshire terrier, Komondor)\n");
+        scanf("%d", &opcionPeloPerro);  // Agrega una variable para almacenar la opción seleccionada
+        switch (opcionPeloPerro)
+        {
+            case 1:
+                strcpy(peloPerro, "Sin pelo");
+                break;
+            case 2:
+                strcpy(peloPerro, "Pelo corto");
+                break;
+            case 3:
+                strcpy(peloPerro, "Pelo medio");
+                break;
+            case 4:
+                strcpy(peloPerro, "Pelo largo");
+                break;
+            default:
+                printf("Opción no válida.\n");
+                exit(1);
+        }
+         strcpy(largoPelo, peloPerro);  // Actualiza la variable largoPelo con el tipo de pelo seleccionado
+
+        fprintf(mascotas, "%s %i %s %s \n", nombrePerro, edadPerro, tamanoPerro, peloPerro);
+
+        fclose(mascotas);
+
+        printf("El registro ha sido exitoso...\n");
+        sleep(3);
+        usuariocliente();
+    }
+    else if (strcmp(mascota, "gato") == 0)
+    {
+        char nombreGato[100];
+        int edadGato;
+        char peloGato[100]; 
+        int opcionPeloGato;
+
+        printf("Nombre del gato: \n");
+        scanf("%s", nombreGato);
+
+        printf("Edad del gato en años: \n");
+        scanf("%i", &edadGato);
+
+        printf("Elige un tipo de pelo para tu gato:\n");
+        printf("1: Sin pelo (Ej. Esfinge, Elfo, Bambino)\n");
+        printf("2: Pelo medio (Ej. Gato doméstico americano, Siamés, Escocés)\n");
+        printf("3: Pelo largo (Ej.Persa, Angora, Him)\n");
+        scanf(" %d", &opcionPeloGato);
+        switch (opcionPeloGato)
+        {
+            case 1:
+                strcpy(peloGato, "Sin pelo");
+                break;
+            case 2:
+                strcpy(peloGato, "Pelo medio");
+                break;
+            case 3:
+                strcpy(peloGato, "Pelo largo");
+                break;
+            default:
+                printf("Opción no válida.\n");
+                exit(1);
+        }
+        strcpy(largoPelo, peloGato);  // Actualiza la variable largoPelo con el tipo de pelo seleccionado
+         fprintf(mascotas, "%s %i %s \n", nombreGato, edadGato, peloGato);
+
+        fclose(mascotas);
+
+        printf("El registro ha sido exitoso...\n");
+        sleep(3);
+        usuariocliente();
+    }
+}
+void solicitudDeServicio() 
+{
+     FILE *mascotas;
+    mascotas = fopen("mascotas.txt", "r");
+    if (mascotas == NULL) 
+    {
+        printf("Error al abrir el archivo de mascotas.\n");
+        exit(1);
+    }
+
+    char linea[100];
+    int opcionMascota;
+    int encontrado = 0;
+
+    printf("\nSolicitud de servicio para mascota\n");
+
+    // Mostrar la lista numerada de mascotas del usuario
+    int contador = 1;
+    while (fgets(linea, sizeof(linea), mascotas) != NULL) 
+    {
+        printf("%d. %s\n", contador, strtok(linea, " "));  // Utiliza strtok para obtener solo el nombre
+        contador++;
+    }
+
+    fclose(mascotas);
+    
+    printf("Seleccione el número de la mascota para la solicitud de servicio:\n");
+    scanf("%d", &opcionMascota);
+
+    mascotas = fopen("mascotas.txt", "r");
+    if (mascotas == NULL) 
+    {
+        printf("Error al abrir el archivo de mascotas.\n");
+        exit(1);
+    }
+
+    for (int i = 1; i < opcionMascota; i++)
+    {
+        if (fgets(linea, sizeof(linea), mascotas) == NULL) 
+        {
+            printf("Error: número de mascota seleccionado no válido.\n");
+            fclose(mascotas);
+            exit(1);
+        }
+    }
+
+    char nombreMascota[100];
+    sscanf(linea, "%99[^\n]", nombreMascota);
+
+    fclose(mascotas);
+
+    // Aquí puedes mostrar más detalles de la mascota si lo deseas
+
+    // Presentar menú de servicios
+    char opcionServicio;
+   printf("\nSeleccione los servicios que desea incluir (ingrese las letras correspondientes):\n");
+    printf("a) Baño\n");
+    printf("b) Corte de pelo\n");
+    printf("c) Corte de uñas\n");
+    printf("d) Cepillado dental\n");
+
+    do {
+        printf("Servicio (a, b, c, d) o presione 's' para finalizar: ");
+        scanf(" %c", &opcionServicio);
+
+        switch (opcionServicio) {
+            case 'a':
+                serviciosSeleccionados[0] = 'a';
+                break;
+            case 'b':
+                serviciosSeleccionados[1] = 'b';
+                break;
+            case 'c':
+                serviciosSeleccionados[2] = 'c';
+                break;
+            case 'd':
+                serviciosSeleccionados[3] = 'd';
+                break;
+            case 's':
+                break;
+            default:
+                printf("Opción no válida. Inténtelo de nuevo.\n");
+        }
+    } while (opcionServicio != 's');
+
+    // Aquí puedes hacer algo con los servicios seleccionados
+    // Puedes almacenarlos en una estructura, mostrar el costo, etc.
+
+    printf("Servicios seleccionados:\n");
+    for (int i = 0; i < 4; i++) 
+    
+    {
+        if (serviciosSeleccionados[i] != ' ')
+        {
+            printf("%c) ", serviciosSeleccionados[i]);
+        }
+    }
+    printf("\n");
+    detalleDelServicio(nombreMascota, serviciosSeleccionados, descuento, costoTotal, precioFinal);
+   
+}
+
+
+float obtenerPorcentajeDesdeArchivo(const char *nombreArchivo)
+{
+    // Aquí deberías implementar la lógica para leer el porcentaje desde el archivo
+    // Puedes utilizar funciones como fscanf
+    // Devuelve el porcentaje leído (puedes ajustar el tipo de retorno según tus necesidades)
+    return 0.0;
+}
+
+void mostrarDetalleOrden(const char *nombreMascota, const char *altura, const char *largoPelo, float costoNormal, float descuento, float precioFinal)
+{
+    printf("\nDetalle del servicio:\n");
+    printf("Nombre de la mascota: %s\n", nombreMascota);
+    if (strlen(altura) > 0) 
+    {
+        printf("Altura de la mascota: %s\n", altura);
+    }
+    printf("Largo de pelo de la mascota: %s\n", largoPelo);
+    printf("Desagregado de precios de la orden:\n");
+    printf("Costo normal por cada servicio: %.2f\n", costoNormal);
+    printf("Precio total de la orden: %.2f\n", precioFinal);
+    if (descuento > 0.0) {
+        printf("Descuento aplicado: %.2f%%\n", descuento);
+    }
+    printf("Precio final de la orden: %.2f\n", precioFinal);
+}
+void mensajeConfirmacion(void) 
+{
+    // Implementa tu lógica para mostrar el mensaje de aceptación o cancelación aquí
+    // Puedes basarte en el código anterior de tu función mensajeConfirmacion
+    printf("Mensaje de confirmación: ¡Servicio confirmado!\n");
+}
+void detalleDelServicio(const char *nombreMascota, const char serviciosSeleccionados[4], float descuento, float costoTotal, float precioFinal)
+{
+    costoTotal = calcularCostoTotal();  // Agrega esta línea para calcular el costo tota
+    // Mostrar detalles del servicio
+    mostrarDetalleOrden(nombreMascota, altura, largoPelo, costoTotal, descuento, precioFinal);
+
+    printf("Servicios seleccionados: ");
+    for (int i = 0; i < 4; i++)
+    {
+        if (serviciosSeleccionados[i] != ' ')
+        {
+            printf("%c ", serviciosSeleccionados[i]);
+        }
+    }
+    printf("\n");
+
+    // Solicitar confirmación al usuario
+    char confirmacion[10];
+    printf("Escriba 'Acepto' para confirmar el servicio o 'Cancelo' para cancelarlo: ");
+    scanf("%s", confirmacion);
+
+    // Mostrar mensaje de confirmación por 3 segundos
+    printf("\nProcesando... \n");
+    sleep(3);
+
+    // Mostrar mensaje de aceptación o cancelación
+    if (strcmp(confirmacion, "Acepto") == 0)
+    {
+        printf("\n¡Servicio confirmado! Gracias por elegir nuestros servicios.\n");
+        mensajeConfirmacion();  // Pasé el mensaje de confirmación aquí
+
+        // Guardar la información en el historial
+        FILE *historial = fopen("historial_servicios.txt", "a");
+        if (historial == NULL)
+        {
+            printf("Error al abrir o crear el archivo de historial de servicios.\n");
+            exit(1);
+        }
+    if (serviciosSeleccionados[0] != ' ' || serviciosSeleccionados[1] != ' ' ||
+    serviciosSeleccionados[2] != ' ' || serviciosSeleccionados[3] != ' ')
+    {
+    fprintf(historial, "%s %c %c %c %c %.2f %.2f %.2f\n", nombreMascota,
+            serviciosSeleccionados[0], serviciosSeleccionados[1], serviciosSeleccionados[2],
+            serviciosSeleccionados[3], descuento, costoTotal, precioFinal);
+    }
+        fclose(historial);  // Asegúrate de cerrar el archivo después de escribir
+    }
+    else if (strcmp(confirmacion, "Cancelo") == 0)
+    {
+        printf("\nServicio cancelado. Lamentamos que no hayas elegido nuestros servicios en esta ocasión.\n");
+    }
+    // Redireccionar al usuario a la pantalla principal del Menú de usuarios
+    pantallaInicial();
+}
+
+void historialDeServicios()
+{
+     FILE *historial = fopen("historial_servicios.txt", "r");
+    if (historial == NULL) 
+    {
+        printf("No hay historial de servicios.\n");
+        return;
+    }
+
+    struct HistorialServicio historialServicio;
+
+    while (fscanf(historial, "%s %s %s %s %s %f %f %f", historialServicio.nombreMascota,
+              historialServicio.servicios[0], historialServicio.servicios[1],
+              historialServicio.servicios[2], historialServicio.servicios[3],
+              &historialServicio.descuento,
+              &historialServicio.precioTotalOrden, &historialServicio.precioFinal) != EOF) 
+              {
+        printf("\nNombre de la mascota: %s\n", historialServicio.nombreMascota);
+        printf("Servicios que componen la orden: %s, %s, %s, %s\n", historialServicio.servicios[0],
+               historialServicio.servicios[1], historialServicio.servicios[2], historialServicio.servicios[3]);
+        printf("Descuentos en pesos aplicados en el servicio: %.2f\n", historialServicio.descuento);
+        printf("Precio total de la orden: %.2f\n", historialServicio.precioTotalOrden);
+        printf("Precio final del servicio: %.2f\n", historialServicio.precioFinal);
+        printf("------------------------------\n");
+    }
+
+    fclose(historial);
+}
+void preciosDeServicios()
+{
+ printf("\n5.4 Ver precios de servicios\n");
+
+    // Mostrar precios de baño para perros
+    printf("\nPrecios de baño para perros:\n");
+    mostrarPreciosDesdeArchivo("precios_bano_perros.txt");
+
+    // Mostrar precios de corte de pelo para perros
+    printf("\nPrecios de corte de pelo para perros:\n");
+    mostrarPreciosDesdeArchivo("precios_corte_pelo_perros.txt");
+
+    // Mostrar precios de corte de uñas para perros
+    printf("\nPrecios de corte de uñas para perros:\n");
+    mostrarPreciosDesdeArchivo("precios_corte_unas_perros.txt");
+
+    // Mostrar precios de cepillado dental para perros
+    printf("\nPrecios de cepillado dental para perros:\n");
+    mostrarPreciosDesdeArchivo("precios_cepillado_dental_perros.txt");
+
+    // Mostrar precios de baño para gatos
+    printf("\nPrecios de baño para gatos:\n");
+    mostrarPreciosDesdeArchivo("precios_bano_gatos.txt");
+
+    // Mostrar precios de corte de uñas para gatos
+    printf("\nPrecios de corte de uñas para gatos:\n");
+    mostrarPreciosDesdeArchivo("precios_corte_unas_gatos.txt");
+
+    // Mostrar precios de cepillado dental para gatos
+    printf("\nPrecios de cepillado dental para gatos:\n");
+    mostrarPreciosDesdeArchivo("precios_cepillado_dental_gatos.txt");
+
+    // Pedir al usuario que presione una tecla para regresar al Menú principal de usuario
+    printf("\nPresione una tecla para regresar al Menú principal de usuario...\n");
+  getchar();  // Utiliza getchar() para esperar la entrada de Enter
+    usuariocliente();
+    
+}
+void mostrarPreciosDesdeArchivo(const char *nombreArchivo) 
+{
+    FILE *archivo = fopen(nombreArchivo, "r");
+    if (archivo == NULL) 
+    {
+        printf("Error al abrir el archivo %s.\n", nombreArchivo);
+        return;
+    }
+
+    char linea[100];
+
+    // Leer y mostrar cada línea del archivo
+    while (fgets(linea, sizeof(linea), archivo) != NULL) 
+    {
+        printf("%s", linea);
+    }
+
+    fclose(archivo);
+}
+
+float obtenerPorcentajeDescuento(int serviciosRealizados) 
+{
+    // Si el usuario ha hecho más de tres servicios, aplicar un descuento
+    if (serviciosRealizados > 3) 
+    {
+        // Ajusta la lógica de descuento según tus necesidades
+        return 10.0;  // Descuento del 10% como ejemplo
+    } 
+    else 
+    {
+        return 0.0;  // No hay descuento
+    }
+}
+float calcularCostoTotal()
+{
+    // Agrega tu lógica para calcular el costo total basado en los servicios seleccionados
+    // Puedes usar los precios de servicios almacenados en archivos y la información de la mascota
+    // Devuelve el costo total calculado
+    return 0.0;  // Ajusta según sea necesario
+}
